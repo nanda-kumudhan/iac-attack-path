@@ -1,0 +1,35 @@
+# Dependencies and build output
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+.aws/
+.agents/
+.codex/
+
+# Terraform local files and generated plans
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+plan.json
+plan-*.json
+*.plan.json
+crash.log
+crash.*.log
+
+# Logs and editor files
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
