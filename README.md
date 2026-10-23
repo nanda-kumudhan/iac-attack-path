@@ -1,48 +1,93 @@
 # IaC Attack Path Checker
 
-A project I'm building to check whether a Terraform change opens a path from the internet to private AWS data.
+An offline project to check whether a Terraform change introduces a route from
+the internet to private AWS data. The planned engine compares base/head plans,
+explains new chains and suggests changes that block them.
 
-The idea is to connect the dots between resources. An open security group might look like one issue, but it gets more interesting when the attached instance has a role that can read an S3 bucket.
+**Current status:** Action packaging, Markdown/SARIF formatting, a browser report
+viewer and a static guide are implemented. The engine, analysis CLI, ground-truth
+labels and evaluation harness remain for the author to hand-code. This checkout
+does not yet detect attack paths or analyse raw Terraform plans.
 
-## The plan
+## Run the delivery demo
 
-Compare the base and head Terraform plans, build a graph for each, and flag any new attack paths. Eventually, this should run as a GitHub Action and suggest the smallest change that blocks a path.
+Use Node 24 (`.nvmrc`), then:
 
-The engine will run offline. A browser viewer is planned too, so plans can be analysed locally without uploading infrastructure code.
-
-## First version
-
-- Read JSON from `terraform show -json`.
-- Model security groups, EC2 instances, IAM roles and S3 buckets.
-- Find paths from the internet to data using BFS.
-- Compare paths between two plans and return a non-zero exit code when a new one appears.
-- Check the results against three hand-labelled scenarios.
-
-After that: a GitHub Action, min-cut suggestions, SARIF output and a graph viewer.
-
-## Planned stack
-
-TypeScript, Node.js and Vitest for the engine and CLI. Cytoscape.js for the viewer, with GitHub Actions and GitHub Pages for delivery.
-
-## Folder structure
-
-```text
-src/
-  engine/        Graph model, parser and analysis
-  cli/           Command-line interface
-  action/        GitHub Action integration
-  viewer/        Browser graph viewer
-tests/
-  fixtures/      Before/after plans and expected paths
-docs/            Design notes and evaluation results
+```sh
+npm ci
+npm run dev
 ```
+
+Open the printed local URL and choose **Load demo**, or load a v1
+report from your engine. The viewer filters supplied findings and shows each
+path, explanation and supplied suggestion. Reports are read without upload.
+Scripts and Cytoscape are bundled; there are no remote fonts, CDN or analytics.
+The production content security policy blocks network connections.
+
+```sh
+# Formatting only, not the planned analysis CLI
+npm run report -- --input examples/reports/demo.json --out-dir iac-report
+
+# Verify delivery code and build the Action + static viewer/guide
+npm run check
+```
+
+The demo is synthetic, not a CloudGoat fixture or evidence of detection quality.
+Its suggestion is illustrative; no minimum cut has been calculated.
+
+## Ownership and stages
+
+| Hand-written by the author | Generated delivery code |
+| --- | --- |
+| Typed graph and Terraform parser | Action wrapper and bundle |
+| Networking/IAM extraction and escalation rules | PR comment and SARIF formatting |
+| BFS, explanation logic, canonical identity and diff | Cytoscape report viewer |
+| Min-cut and attribute-to-change mapping | Static guide, CI and Pages packaging |
+| Analysis CLI, labels and evaluation harness | Presentation validation and delivery tests |
+
+The report contract describes display data, not the infrastructure graph model.
+Every path, ID, classification, certainty and suggested edit must come from the
+hand-written engine. See [stage decisions and reasons](docs/decisions.md) for
+completed delivery stages and your next steps. `src/engine` and `src/cli` remain
+unimplemented.
+
+## Planned MVP
+
+Read `terraform show -json`, model security groups, EC2 instances, IAM roles and
+S3 buckets, find internet-to-data paths, compare base/head findings and exit
+non-zero for introduced paths. Check three hand-labelled static scenarios.
+IAM escalation rules and min-cut follow the core analysis.
+
+The browser currently views reports. Browser analysis requires the shared,
+hand-written engine and is not implemented yet.
+
+## Integration
+
+- [Report contract](docs/report-contract.md): engine output consumed by delivery.
+- [Action usage](docs/action.md): gating, comments, SARIF and Pages setup.
+- [Evaluation plan](docs/evaluation.md): evidence to collect, with no invented scores.
+- `guide.html`: static guide built alongside the viewer.
+
+The Action reads a report, writes Markdown/SARIF and fails for introduced paths,
+including possible paths. Missing/invalid reports fail; demos are rejected by
+default. It neither runs Terraform nor computes a diff. Comments are disabled
+by default. Opted-in comments and SARIF uploads disclose findings to GitHub.
+
+`lib/action.cjs` is the committed runtime bundle; rebuild it when source changes.
+CI checks delivery only. Pages publication is manually triggered. Nothing has
+been deployed.
 
 ## Evaluation and limits
 
-I'll compare found, missed and false paths against hand-labelled CloudGoat and TerraGoat scenarios, using static analysis only. These labs are intentionally vulnerable and won't be deployed for this project. I'll also measure runtime on generated plans with 500 and 5,000 resources.
+AWS only, heuristic analysis and a small planned IAM subset; unknown values
+should yield possible paths. Public ingress alone does not establish a route:
+routing, addressing and service exposure matter. Network access does not imply
+compromise or credential theft. Explain those prerequisites explicitly.
 
-The initial scope is AWS and a small subset of IAM behaviour. Values that are unknown until apply should produce possible paths rather than definite ones. Results will be heuristic, with no claim of complete IAM evaluation.
+There is no claim of full IAM evaluation or proof that an empty report means
+secure infrastructure. Canonical diff and min-cut cost modelling remain author
+decisions. No evaluation measurements exist yet.
 
-## Status
-
-Just the folder structure for now. No implementation or runnable commands yet.
+CloudGoat and TerraGoat will be analysed statically only. Never deploy these
+intentionally vulnerable labs for this project. No credentials, deployment
+commands or Terraform apply workflows are included.

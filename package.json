@@ -1,0 +1,33 @@
+{
+  "name": "iac-attack-path",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline IaC attack-path project: delivery and presentation scaffolding",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build:action": "node scripts/build-action.mjs",
+    "build:viewer": "vite build",
+    "build": "npm run build:action && npm run build:viewer",
+    "report": "tsx scripts/render-report.ts",
+    "check": "npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "@actions/core": "^3.0.1",
+    "cytoscape": "^3.34.4",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}

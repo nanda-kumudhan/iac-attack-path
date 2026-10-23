@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "analysis": {
+    "status": "demo",
+    "warnings": [
+      "Synthetic presentation example, not a Terraform analysis or labelled ground-truth scenario.",
+      "Public ingress alone does not establish internet reachability: routing, public addressing and service exposure must be evaluated by the engine."
+    ]
+  },
+  "paths": [
+    {
+      "id": "demo-introduced-web-to-data",
+      "change": "introduced",
+      "certainty": "definite",
+      "explanation": "Illustrative route: an internet-facing service is assumed compromised, then its instance credentials are assumed available to read the bucket. These assumptions are not verified by this demo.",
+      "steps": [
+        { "resource": "Internet" },
+        { "resource": "aws_security_group.web" },
+        { "resource": "aws_instance.web" },
+        { "resource": "aws_iam_role.web" },
+        { "resource": "aws_s3_bucket.customer_data" }
+      ],
+      "remediation": {
+        "description": "Illustrative only: restrict the public ingress rule. No min-cut has been calculated.",
+        "resource": "aws_security_group.web",
+        "attribute": "ingress.cidr_blocks"
+      }
+    },
+    {
+      "id": "demo-possible-worker-to-archive",
+      "change": "introduced",
+      "certainty": "possible",
+      "explanation": "Illustrative unknown: the worker's public addressing is unresolved until apply.",
+      "steps": [
+        { "resource": "Internet" },
+        { "resource": "aws_instance.worker" },
+        { "resource": "aws_iam_role.worker" },
+        { "resource": "aws_s3_bucket.archive" }
+      ]
+    },
+    {
+      "id": "demo-removed-admin-route",
+      "change": "removed",
+      "certainty": "definite",
+      "explanation": "Illustrative removed route from a previous report.",
+      "steps": [
+        { "resource": "Internet" },
+        { "resource": "aws_instance.old_admin" },
+        { "resource": "aws_s3_bucket.archive" }
+      ]
+    }
+  ]
+}

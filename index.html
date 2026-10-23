@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Review IaC attack-path reports locally: paths, resource chains and supporting evidence." />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+    <title>Path review · IaC Attack Path</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body class="review-page">
+    <a href="#main" class="skip-link">Skip to review</a>
+    <aside class="app-rail" aria-label="Application navigation">
+      <a class="brand" href="./"><svg class="brand-mark" width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true"><path d="M14 2 24 6v8c0 6-10 12-10 12S4 20 4 14V6L14 2Z" stroke="currentColor" stroke-width="1.5"/><path d="M9 17V11h10m-4-4 4 4-4 4" stroke="currentColor" stroke-width="1.5"/></svg><span>IaC Attack Path<small>Infrastructure security</small></span></a>
+      <p class="rail-label">WORKSPACE</p>
+      <nav class="rail-nav" aria-label="Main">
+        <a href="./" aria-current="page"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 3h4v4H3zM9 9h4v4H9zM5 7v4h4" stroke="currentColor" stroke-width="1.3"/></svg>Path review</a>
+        <a href="./guide.html"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 2h6l3 3v9H4V2Z" stroke="currentColor" stroke-width="1.3"/><path d="M7 7h3M7 10h3" stroke="currentColor" stroke-width="1.3"/></svg>Project guide</a>
+      </nav>
+      <div class="rail-bottom"><span class="local-badge"><i aria-hidden="true"></i> Offline workspace</span><p>Files stay in your browser.</p><span class="version">AWS / REPORT v1</span></div>
+    </aside>
+    <div class="app-content">
+      <header class="topbar"><span>Workspace <span class="breadcrumb-separator">/</span> <strong>Path review</strong></span><span class="topbar-note">Local report viewer</span></header>
+      <main id="main" class="review-main">
+        <section class="page-heading" aria-label="Review controls">
+          <div><p class="eyebrow">INFRASTRUCTURE SECURITY</p><h1>Path review</h1><p class="page-description">Inspect infrastructure changes from the internet to your data.</p></div>
+          <div class="toolbar"><button class="secondary-button" id="load-demo" type="button">Load demo</button><button class="primary-button" id="open-report" type="button" aria-describedby="file-help"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5"/></svg>Open report</button><input id="report-file" type="file" accept=".json,application/json" aria-describedby="file-help" hidden /></div>
+        </section>
+        <p id="error" class="error" role="alert" hidden></p>
+        <section class="report-bar" aria-label="Current report">
+          <svg width="17" height="19" viewBox="0 0 17 19" fill="none" aria-hidden="true"><path d="M3 1h7l4 4v13H3V1Z" stroke="currentColor"/><path d="M10 1v5h4M6 10h5M6 13h5" stroke="currentColor"/></svg>
+          <div class="report-name"><span class="field-label">REPORT</span><strong id="report-name">No report loaded</strong></div>
+          <span id="file-help" class="file-help">Report JSON · max 5 MiB · no upload</span><button id="clear" class="quiet-button" type="button" disabled>Clear report</button>
+        </section>
+        <section class="metrics" aria-label="Report overview">
+          <div class="metric introduced"><div><span class="metric-label">Introduced</span><span class="metric-marker" aria-hidden="true">↗</span></div><strong id="introduced-count">—</strong><span class="metric-note">New routes to review</span></div>
+          <div class="metric removed"><div><span class="metric-label">Removed</span><span class="metric-marker" aria-hidden="true">↘</span></div><strong id="removed-count">—</strong><span class="metric-note">Routes no longer present</span></div>
+          <div class="metric unchanged"><div><span class="metric-label">Unchanged</span><span class="metric-marker" aria-hidden="true">—</span></div><strong id="unchanged-count">—</strong><span class="metric-note">Present in both reports</span></div>
+          <div class="metric possible"><div><span class="metric-label">Possible</span><span class="metric-marker" aria-hidden="true">?</span></div><strong id="possible-count">—</strong><span class="metric-note">Introduced, with uncertainty</span></div>
+        </section>
+        <p id="demo-notice" class="notice" hidden><strong>Demo report</strong><span>Synthetic findings for exploring the viewer. No Terraform analysis or min-cut calculation was performed.</span></p>
+        <section class="workspace" aria-label="Attack-path explorer">
+          <aside class="path-panel">
+            <div class="panel-heading"><h2>Attack paths</h2><span id="path-count" class="count-chip">0</span></div>
+            <div class="path-filters"><div class="filter-row"><div><label class="field-label" for="change-filter">Change</label><select id="change-filter"><option value="introduced">Introduced</option><option value="removed">Removed</option><option value="unchanged">Unchanged</option><option value="all">All paths</option></select></div><div><label class="field-label" for="certainty-filter">Certainty</label><select id="certainty-filter"><option value="all">All</option><option value="definite">Definite</option><option value="possible">Possible</option></select></div></div>
+              <label class="visually-hidden" for="search">Find a resource or path</label><input id="search" type="search" placeholder="Find resource or path…" />
+            </div>
+            <div id="path-list" class="path-list" aria-label="Select a path"><p class="muted">Open a report to see its paths.</p></div>
+            <p class="panel-footnote">Select a path to inspect its evidence.</p>
+          </aside>
+          <div class="graph-panel">
+            <div class="panel-heading"><div class="panel-title"><h2>Path diagram</h2><span id="selected-count">No selection</span></div><button id="fit" type="button" class="secondary-button" disabled>Fit to view</button></div>
+            <div class="analysis-body">
+              <div class="graph-stage"><div class="graph-wrap"><div id="graph" role="img" aria-label="No path selected"></div><div id="graph-empty"><svg width="76" height="58" viewBox="0 0 76 58" fill="none" aria-hidden="true"><path d="M16 20v18h44V20" stroke="currentColor"/><path d="m56 30 4 8 4-8" stroke="currentColor"/><path d="M4 4h24v16H4zM48 38h24v16H48z" fill="var(--surface)" stroke="currentColor"/></svg><h3 id="empty-title">No path selected</h3><p id="empty-description">Open a report or load the demo to inspect a resource chain.</p><span class="empty-format">Accepts report JSON, not raw Terraform plans</span></div></div><div class="graph-legend"><span><i class="node-key" aria-hidden="true"></i> Resource chain</span><span>Scroll to zoom · drag to pan</span></div></div>
+              <section class="evidence-panel" aria-label="Selected path evidence"><div class="evidence-heading"><h2>Evidence</h2><span>SELECTED PATH</span></div><div id="path-detail" class="path-detail" aria-live="polite"><p class="muted">The selected path's explanation, resources and suggested change appear here.</p></div></section>
+            </div>
+          </div>
+        </section>
+        <section class="report-footer" aria-label="Report exports"><p>Export findings <span>Resource details are included in exported files.</span></p><div class="export-actions"><button id="export-md" class="secondary-button" disabled>Export Markdown</button><button id="export-sarif" class="secondary-button" disabled>Export SARIF <span aria-hidden="true">↓</span></button></div></section>
+        <details id="warnings"><summary>Analysis warnings &amp; scope</summary><ul id="warning-list"></ul><p>AWS only. Limited IAM semantics. Heuristic results include plan-time uncertainty. An empty report does not prove that infrastructure is secure.</p></details>
+        <footer class="workspace-status"><p id="status" role="status" aria-live="polite">Ready. Open a report to begin.</p><span>IaC Attack Path / 0.1</span></footer>
+      </main>
+    </div>
+    <script type="module" src="/src/viewer/main.ts"></script>
+  </body>
+</html>

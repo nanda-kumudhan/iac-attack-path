@@ -33,3 +33,7 @@ crash.*.log
 .vscode/
 *.swp
 *.swo
+
+# Generated reports may reveal infrastructure details
+iac-report/
+*.sarif
