@@ -1,0 +1,29 @@
+{
+  "repository": "https://github.com/RhinoSecurityLabs/cloudgoat",
+  "commit": "63c65bd26edc6919499adfa20b176c450e35c33c",
+  "kind": "manually normalized static slice, not a terraform-generated full lab plan",
+  "changes": [
+    "Fixed names/IDs/account to placeholders",
+    "Removed application assets, secrets, provisioners, unrelated users, Lambda and data sources",
+    "Set cg_whitelist to 0.0.0.0/0 for HTTP; SSH stays private",
+    "No infrastructure deployed"
+  ],
+  "sources": [
+    {
+      "path": "cloudgoat/scenarios/aws/cloud_breach_s3/terraform/ec2.tf",
+      "sha256": "6b17b156e2f64538d7279dfe00e3e79f5fa01791c95f51cbbf4f3d18575aa9f9"
+    },
+    {
+      "path": "cloudgoat/scenarios/aws/cloud_breach_s3/terraform/s3.tf",
+      "sha256": "8a27c6f1b592fa08b7a88fa42dd924be3633dd1fb9920f3787159771a4ae64b9"
+    },
+    {
+      "path": "cloudgoat/scenarios/aws/cloud_breach_s3/terraform/vpc.tf",
+      "sha256": "2ba9b70869976d06333f82bb39b746bc358aadf9352bb91ea3872419318ae252"
+    },
+    {
+      "path": "cloudgoat/scenarios/aws/cloud_breach_s3/README.md",
+      "sha256": "ea0b172c08aeb0a4fc527d45066c3f79d0ee23b01680fb383a7dde3a77ea5385"
+    }
+  ]
+}

@@ -1,0 +1,203 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "normalized-static-slice",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_vpc.main",
+          "mode": "managed",
+          "type": "aws_vpc",
+          "name": "main",
+          "values": {
+            "id": "vpc-main"
+          }
+        },
+        {
+          "address": "aws_subnet.public",
+          "mode": "managed",
+          "type": "aws_subnet",
+          "name": "public",
+          "values": {
+            "id": "subnet-public",
+            "vpc_id": "vpc-main"
+          }
+        },
+        {
+          "address": "aws_internet_gateway.main",
+          "mode": "managed",
+          "type": "aws_internet_gateway",
+          "name": "main",
+          "values": {
+            "id": "igw-main",
+            "vpc_id": "vpc-main"
+          }
+        },
+        {
+          "address": "aws_route_table.public",
+          "mode": "managed",
+          "type": "aws_route_table",
+          "name": "public",
+          "values": {
+            "id": "rt-public",
+            "route": [
+              {
+                "cidr_block": "0.0.0.0/0",
+                "gateway_id": "igw-main"
+              }
+            ]
+          }
+        },
+        {
+          "address": "aws_route_table_association.public",
+          "mode": "managed",
+          "type": "aws_route_table_association",
+          "name": "public",
+          "values": {
+            "subnet_id": "subnet-public",
+            "route_table_id": "rt-public"
+          }
+        },
+        {
+          "address": "aws_security_group.lb_http",
+          "mode": "managed",
+          "type": "aws_security_group",
+          "name": "lb_http",
+          "values": {
+            "id": "sg-lb",
+            "vpc_id": "vpc-main",
+            "ingress": [
+              {
+                "protocol": "tcp",
+                "from_port": 80,
+                "to_port": 80,
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "address": "aws_security_group.ec2_http",
+          "mode": "managed",
+          "type": "aws_security_group",
+          "name": "ec2_http",
+          "values": {
+            "id": "sg-ec2",
+            "vpc_id": "vpc-main",
+            "ingress": [
+              {
+                "protocol": "tcp",
+                "from_port": 9000,
+                "to_port": 9000,
+                "security_groups": [
+                  "sg-lb"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "address": "aws_lb.this",
+          "mode": "managed",
+          "type": "aws_lb",
+          "name": "this",
+          "values": {
+            "id": "lb-example",
+            "internal": false,
+            "security_groups": [
+              "sg-lb"
+            ]
+          }
+        },
+        {
+          "address": "aws_lb_listener.http",
+          "mode": "managed",
+          "type": "aws_lb_listener",
+          "name": "http",
+          "values": {
+            "load_balancer_arn": "lb-example",
+            "port": 80,
+            "default_action": [
+              {
+                "type": "forward",
+                "target_group_arn": "tg-example"
+              }
+            ]
+          }
+        },
+        {
+          "address": "aws_lb_target_group.this",
+          "mode": "managed",
+          "type": "aws_lb_target_group",
+          "name": "this",
+          "values": {
+            "arn": "tg-example",
+            "port": 9000,
+            "protocol": "HTTP"
+          }
+        },
+        {
+          "address": "aws_lb_target_group_attachment.this",
+          "mode": "managed",
+          "type": "aws_lb_target_group_attachment",
+          "name": "this",
+          "values": {
+            "target_group_arn": "tg-example",
+            "target_id": "i-example",
+            "port": 9000
+          }
+        },
+        {
+          "address": "aws_instance.ubuntu",
+          "mode": "managed",
+          "type": "aws_instance",
+          "name": "ubuntu",
+          "values": {
+            "id": "i-example",
+            "subnet_id": "subnet-public",
+            "associate_public_ip_address": true,
+            "vpc_security_group_ids": [
+              "sg-ec2"
+            ]
+          }
+        },
+        {
+          "address": "aws_security_group.rds",
+          "mode": "managed",
+          "type": "aws_security_group",
+          "name": "rds",
+          "values": {
+            "id": "sg-db",
+            "vpc_id": "vpc-main",
+            "ingress": [
+              {
+                "protocol": "tcp",
+                "from_port": 5432,
+                "to_port": 5432,
+                "cidr_blocks": [
+                  "10.0.0.0/16"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "address": "aws_db_instance.postgres",
+          "mode": "managed",
+          "type": "aws_db_instance",
+          "name": "postgres",
+          "values": {
+            "engine": "postgres",
+            "publicly_accessible": false,
+            "port": 5432,
+            "vpc_security_group_ids": [
+              "sg-db"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

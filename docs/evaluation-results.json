@@ -1,0 +1,66 @@
+{
+  "method": "Unique ordered resource-chain match on manually normalized static slices. Labels prepared from upstream source; not independently human-reviewed. Not a full-lab or unbiased accuracy estimate.",
+  "results": [
+    {
+      "scenario": "cloud_breach_s3",
+      "found": 1,
+      "missed": 0,
+      "falsePaths": 0,
+      "missedChains": [],
+      "falseChains": [],
+      "minimumEdits": 1,
+      "upstreamCommit": "63c65bd26edc6919499adfa20b176c450e35c33c",
+      "fixtureKind": "manually normalized static slice, not a terraform-generated full lab plan",
+      "independentReview": false
+    },
+    {
+      "scenario": "ec2_ssrf",
+      "found": 1,
+      "missed": 0,
+      "falsePaths": 0,
+      "missedChains": [],
+      "falseChains": [],
+      "minimumEdits": 1,
+      "upstreamCommit": "63c65bd26edc6919499adfa20b176c450e35c33c",
+      "fixtureKind": "manually normalized static slice, not a terraform-generated full lab plan",
+      "independentReview": false
+    },
+    {
+      "scenario": "rce_web_app",
+      "found": 0,
+      "missed": 1,
+      "falsePaths": 0,
+      "missedChains": [
+        [
+          "internet",
+          "aws_security_group.lb_http",
+          "aws_lb.this",
+          "aws_instance.ubuntu",
+          "aws_db_instance.postgres"
+        ]
+      ],
+      "falseChains": [],
+      "minimumEdits": 0,
+      "upstreamCommit": "63c65bd26edc6919499adfa20b176c450e35c33c",
+      "fixtureKind": "manually normalized static slice, not a terraform-generated full lab plan",
+      "independentReview": false
+    },
+    {
+      "scenario": "terragoat_negative",
+      "found": 0,
+      "missed": 0,
+      "falsePaths": 0,
+      "missedChains": [],
+      "falseChains": [],
+      "minimumEdits": 0,
+      "upstreamCommit": "729f8da62c6a85ce4af5ad3d123de97776d954c4",
+      "fixtureKind": "manually normalized static slice, not a terraform-generated full lab plan",
+      "independentReview": false
+    }
+  ],
+  "totals": {
+    "found": 2,
+    "missed": 1,
+    "falsePaths": 0
+  }
+}

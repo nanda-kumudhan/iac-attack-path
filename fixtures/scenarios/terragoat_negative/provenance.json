@@ -1,0 +1,22 @@
+{
+  "repository": "https://github.com/bridgecrewio/terragoat",
+  "commit": "729f8da62c6a85ce4af5ad3d123de97776d954c4",
+  "kind": "manually normalized static slice, not a terraform-generated full lab plan",
+  "changes": [
+    "Fixed names and IDs to placeholders",
+    "Removed unrelated resources, tags and fake user_data secrets",
+    "Retained the absence of an EC2 role and public S3 grants",
+    "Base restricts the public EC2 ingress as a counterfactual",
+    "No infrastructure deployed"
+  ],
+  "sources": [
+    {
+      "path": "terraform/aws/ec2.tf",
+      "sha256": "5fcc2d4cf052fb2032d9470179f63a903d280b99cf5b1bb2db6e15200ecd9428"
+    },
+    {
+      "path": "terraform/aws/s3.tf",
+      "sha256": "860ce876f7c4144f560517f16ef46e57b97b2917dc81b6db5ac32594a7ea643e"
+    }
+  ]
+}

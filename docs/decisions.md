@@ -1,105 +1,70 @@
-# Stage decisions and ownership
+# Architecture and decisions
 
-The author owns the analysis. Generated code is limited to Action packaging,
-PR comments and SARIF formatting, the graph UI and documentation site. Tooling
-and a shared presentation interface support those parts. No engine, analysis
-CLI, labelled scenarios, benchmark generator or evaluation harness is generated.
+The engine has no Node-only imports. `src/engine` is shared by the CLI, Action bundle and browser worker. Terraform remains a separate input-producing step; the checker never runs HCL, providers or application provisioners.
 
-## Delivery A: tooling and the boundary
+```mermaid
+flowchart TD
+  B[Base plan JSON] --> P[Recursive parser and reference resolution]
+  H[Head plan JSON] --> P
+  P --> G[Typed graphs with evidence and uncertainty]
+  G --> S[Reverse reachability and bounded BFS]
+  S --> D[Canonical path diff]
+  D --> C[Max-flow seed and exact minimum edit refinement]
+  C --> R[Validated report]
+  R --> CLI[CLI and exit codes]
+  R --> A[Action / Markdown / SARIF]
+  R --> V[Browser worker and Cytoscape viewer]
+```
 
-**Decision:** Strict TypeScript, npm with a lockfile, Vitest for delivery tests,
-esbuild for the Action and Vite for the viewer.
+## Input and graph
 
-**Why:** The future engine can run in Node and the browser. A report interface
-lets delivery work be exercised without filling in hand-written components.
-Adapt this interface when the engine's needs become clear.
+The parser accepts Terraform JSON format major 1, planned values and nested modules. It rejects state files, errored plans, explicitly incomplete plans, malformed resources and duplicate addresses. Deleted resources are excluded. `resource_changes.change.after_unknown` augments the partial planned values. A mask containing only `false` leaves is known; the real Terraform fixture exercises this distinction.
 
-`src/report/schema.ts` describes display output, not the typed infrastructure
-graph. Resource types, edge evidence, identity and certainty propagation remain
-author decisions.
+Known IDs, names and ARNs resolve links first. Configuration expressions provide dependency references when values remain unknown. Such references are possible links, not evaluated values. Module-scoped resource references are supported; general HCL expression evaluation and transitive module output/variable evaluation are not.
 
-## Delivery B: formatting and the Action
+Nodes are Internet, SecurityGroup, Instance, Role, Bucket and Database. Ancillary resources such as profiles, policies, subnets and route tables supply edges/evidence rather than cluttering path diagrams. All buckets and databases are targets in this release. There is no tag-selected crown-jewel filter yet.
 
-**Decision:** Consume a precomputed report, write Markdown/SARIF, fail for both
-possible and definite introduced paths, and reject missing, invalid or demo
-reports by default. Write artifacts before failing the path gate.
+Edges distinguish public ingress, networking, credential use, IAM grants, role assumption and escalation. They retain certainty, evidence and an optional semantic edit. Address family and public database port constraints travel through BFS, so IPv6 ingress cannot be combined with an IPv4-only attachment and unrelated ports do not establish direct database access.
 
-**Why:** Packaging should not implement diff or silently turn unknowns into a
-clean check. Path change classifications must come from the engine.
+Known private addressing and known route tables without an IGW default route stop direct internet paths. Missing routing evidence yields possible reachability. NAT gateways do not provide inbound internet access. Public IPs and SGs alone do not prove listener availability or compromise. The instance-to-role edge explicitly assumes application exploitation/SSRF and credential theft; it is always possible. Database pivots require a source-SG reference and assume credentials, source egress and private routing.
 
-**Decision:** Node 24 and a committed runtime bundle, `lib/action.cjs`.
+## IAM subset
 
-**Why:** GitHub needs executable JavaScript at the referenced commit; consumers
-should not need to install or compile this repository.
+Action matching is case-insensitive; ARN matching is case-sensitive, with `*` and `?` globs. `s3:ListBucket` and bucket-only ARNs do not grant object read. The implemented read actions are `s3:GetObject` and `s3:GetObjectVersion`. Explicit unconditional matching identity-policy denies override allows. Locally available permissions boundaries must also allow the operation. Conditions, negated constructs and unavailable policy documents introduce uncertainty.
 
-**Decision:** Local files by default, count-only logs, opt-in comments with an
-explicit token, no automatic SARIF upload. Comment failures are warnings and
-cannot erase a path-gate failure. Bound comment size and escape resource text.
+The recognized AWS managed-policy subsets are AdministratorAccess, AmazonS3FullAccess and AmazonS3ReadOnlyAccess. Other attached policies require local documents, otherwise grants are possible. These are supported capability subsets, not live copies of AWS policies. External IAM controls are not fetched.
 
-**Why:** Reports reveal infrastructure details. Posting findings is a deliberate
-disclosure. Fork PRs often lack write permission; presentation failures should
-not change the finding verdict. Each opted-in run creates a new comment;
-updating an existing comment is not implemented.
+The four escalation rules follow the [Rhino Security Labs catalogue](https://github.com/RhinoSecurityLabs/AWS-IAM-Privilege-Escalation):
 
-## Delivery C: browser viewer
+1. `iam:PutRolePolicy` on the current role can add a read grant.
+2. `iam:AttachRolePolicy` on the current role may attach a broader policy; existence and attach conditions remain assumptions.
+3. `iam:CreatePolicyVersion` on an attached customer-managed policy can make a broader version default.
+4. `iam:UpdateAssumeRolePolicy` on another role, together with `sts:AssumeRole`, may change trust and assume it.
 
-**Decision:** Display one supplied path at a time, with filters, resource search,
-Cytoscape, a textual sequence, explanation and optional engine-supplied suggestion.
-Load a synthetic demo only when requested.
+Mutating another role's inline policy does not produce its credentials. `iam:PassRole` alone does not establish code execution or credential use. These cases have negative tests. Successful self-mutation cannot bypass a known unconditional S3 deny or known restrictive boundary. Escalation results are possible, including additional effective-policy prerequisites.
 
-**Why:** This works before the engine exists, avoids an unreadable graph of
-thousands of resources and provides an accessible alternative to canvas. Filters
-select report rows; no analysis graph or path search is implemented here.
+## Search and identity
 
-**Decision:** Bundle assets locally, read files with browser APIs, use no remote
-fonts/CDN/analytics and block network connections in the production CSP.
+Reverse reachability prunes nodes that cannot reach any target. BFS then enumerates simple paths, stopping at the first data target. Per-path visited nodes prevent cycles without losing distinct predecessors. Defaults: 4,000 paths, 24 edges, 100,000 states. Exceeding any cap throws; neither the CLI nor Action can turn it into a clean check.
 
-**Why:** Private reports can be explored locally. Browser Terraform analysis is
-pending the author's browser-compatible engine.
+Canonical IDs use resource addresses and semantic edge records. Deterministic dual 32-bit hashing is shared by Node and the browser; path/edge collisions within a graph/search throw. Resource order, object-key order, SG rule order and IAM action/statement order do not define identity. Distinct ports, grant actions and capability edges can produce separate paths. Policy descriptions do not establish access. This is a versioned implementation identity, not a cryptographic attestation or a stable API across model changes.
 
-Report validation runs with Zod's JIT disabled: its optional dynamic-code probe
-would otherwise trigger a CSP violation. This keeps `unsafe-eval` unnecessary.
+Certainty participates in identity: a possible-to-definite change is removed + introduced, and is gated. Renamed/moved Terraform addresses also produce removed + introduced. A semantic capability change is not hidden by an unchanged resource sequence.
 
-**Visual revision:** Use a compact security-review workspace: a charcoal
-navigation rail, solid neutral panels, crisp borders, restrained status colours
-and monospace resource names. Remove the oversized marketing introduction.
-Place path selection, the diagram and evidence alongside each other on desktop;
-stack them on smaller screens. Keep report controls and counts above the work.
+## Minimum changes
 
-**Why:** The review task needs evidence and resource chains visible together.
-Red identifies introduced routes, amber indicates uncertainty and green denotes
-removed routes. This is a flat tool interface with no glass, blur, gradients,
-decorative shadows or oversized rounded cards. Empty states remain explicit;
-synthetic findings load only when requested.
+Each removable ingress rule, IAM statement or instance-profile assignment costs **one edit**. Costs describe the number of supported edits, not operational disruption. Uneditable evidence edges have effectively infinite capacity. A two-attribute fix is not presented as a single edit.
 
-## Delivery D: docs and publishing
+Edmonds–Karp max-flow uses BFS augmentations and residual reverse arcs to seed a minimum cut. Shared edits get one capacity gate, so one IAM statement or ingress rule can block many paths. Such gate sharing can create recombined routes in the transformed graph. Claiming that graph cut alone is the minimum change to the original enumerated paths would be incorrect.
 
-**Decision:** A static guide beside the viewer and a manually triggered Pages
-workflow that publishes only the viewer build with its synthetic example.
+An exact branch-and-bound hitting-set refinement therefore minimizes distinct edits over all introduced paths. A disjoint-constraint lower bound, memoization and the flow solution bound the search. Every returned edit set is verified to intersect every introduced path. The solver fails after 200,000 states rather than claiming unverified minimality. Exhaustive enumeration tests small randomized instances against the solver.
 
-**Why:** No server is needed, status and limits stay visible, and unfinished work
-is not published with every push. No Site or hosted service was created here.
+Minimality applies to **supported edits on the enumerated introduced paths**, not every possible AWS fix or every existing path. The chosen set can also remove unchanged paths. Alternative edits with equal cardinality are not ranked by business impact. No Terraform file is rewritten automatically. Rule/statement hashes in attribute selectors identify semantic blocks; they are not literal HCL indices.
 
-**Decision:** No invented evaluation scores or CloudGoat/TerraGoat labels.
+## Delivery and privacy
 
-**Why:** Independent hand labels and measured misses are this project's evidence.
-A presentation demo cannot provide it.
+The Action takes either base/head plans or a precomputed report. Artifacts precede gate failure. Missing inputs, malformed reports, demos without explicit opt-in and incomplete analyses fail. Count-only logs are the default; comments are opt-in and cannot erase a gate failure.
 
-## Next hand-written stages
+Production viewer scripts/styles/Cytoscape are bundled with no CDN or backend. A worker performs analysis and can be terminated. CSP blocks `connect-src`, and Zod's optional dynamic-code probe is disabled. File contents live in memory. The diagram shows one path at a time with an equivalent textual sequence. Exports deliberately include resource details.
 
-| Stage | Author's decision | Evidence needed |
-| --- | --- | --- |
-| 1. Ground truth | Three scenarios, pinned revisions, entry/data targets, compromise assumptions and negative controls | Independent expected chains and prerequisites |
-| 2. Plan spike | Produce useful plan JSON without real credentials or deployment | Reproducible offline procedure and recorded unresolved data |
-| 3. Graph/parser | Typed nodes, edge evidence, routing, public addressing, security groups, profiles and S3 targets | Fixtures distinguish exposure from reachability |
-| 4. BFS/CLI | Path meaning, termination, cycles, caps and explanation of prerequisites | Understandable CLI results and uncertainty |
-| 5. IAM subset | Four or five published escalation rules with explicit omitted semantics | Positive/negative examples for each rule |
-| 6. Identity/diff | Canonical paths, certainty-change treatment and CLI exit codes | Before/after tests and a delivery report |
-| 7. Integration | Wire the real CLI into plan-comparison CI | Introduced findings and analysis errors fail correctly |
-| 8. Min-cut | Change cost, mutable attributes and shared attribute-to-edge mapping | All intended paths cut; minimal under the documented model |
-| 9. Browser analysis | Worker integration and size limits for the engine | Real plans analysed locally with a responsive UI |
-| 10. Evaluation | Matching rules, found/missed/false accounting and benchmark generation | Three labelled scenarios and measured 500/5,000-resource runtime |
-
-Delivery work is intentionally out of the original order so it can be useful
-while the author writes the core. The MVP still requires stages 1–6 and a
-hand-written evaluation. Delivery tests do not evaluate detection quality.
+The original delivery-only scaffold is now connected to the implemented engine. This project does not claim independent human authorship of generated algorithms or labels; readers should inspect and challenge the model and evaluation.

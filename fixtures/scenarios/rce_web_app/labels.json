@@ -1,0 +1,14 @@
+{
+  "expectedChains": [
+    [
+      "internet",
+      "aws_security_group.lb_http",
+      "aws_lb.this",
+      "aws_instance.ubuntu",
+      "aws_db_instance.postgres"
+    ]
+  ],
+  "rationale": "Known blind spot expected to be missed: ALB forwarding plus CIDR-based private database ingress. Compromise and database credentials from application config assumed.",
+  "comparison": "Unique ordered resource sequences; port/action variants collapse. Base is a restricted-ingress counterfactual.",
+  "independentReview": false
+}

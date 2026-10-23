@@ -1,0 +1,14 @@
+{
+  "expectedChains": [
+    [
+      "internet",
+      "aws_security_group.ec2_security_group",
+      "aws_instance.ubuntu_ec2",
+      "aws_iam_role.ec2_role",
+      "aws_s3_bucket.secret_bucket"
+    ]
+  ],
+  "rationale": "Reachable HTTP service, assumed SSRF/proxy compromise and metadata credential theft, then role S3 read. Stops at S3, not the full lab victory condition.",
+  "comparison": "Unique ordered resource sequences; port/action variants collapse. Base is a restricted-ingress counterfactual.",
+  "independentReview": false
+}

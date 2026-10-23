@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Offline IaC attack-path project: delivery and presentation scaffolding",
+  "description": "Offline Terraform attack-path analysis, minimum edits, GitHub Action and browser viewer",
   "engines": {
     "node": ">=24"
   },
@@ -13,9 +13,15 @@
     "test": "vitest run",
     "build:action": "node scripts/build-action.mjs",
     "build:viewer": "vite build",
-    "build": "npm run build:action && npm run build:viewer",
+    "build": "npm run build:cli && npm run build:action && npm run build:viewer",
     "report": "tsx scripts/render-report.ts",
-    "check": "npm run typecheck && npm test && npm run build"
+    "check": "npm run typecheck && npm test && npm run build",
+    "analyze": "tsx src/cli/index.ts",
+    "build:cli": "node scripts/build-cli.mjs",
+    "evaluate": "tsx scripts/evaluation/run.ts",
+    "benchmark": "tsx scripts/evaluation/benchmark.ts",
+    "spike": "bash scripts/offline-plan.sh",
+    "test:browser": "npm run build:viewer && playwright test"
   },
   "dependencies": {
     "@actions/core": "^3.0.1",
@@ -23,11 +29,17 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@types/node": "^24.19.2",
     "esbuild": "^0.28.2",
+    "prettier": "^3.9.10",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
-  }
+  },
+  "bin": {
+    "iac-attack-path": "dist/cli.cjs"
+  },
+  "license": "MIT"
 }

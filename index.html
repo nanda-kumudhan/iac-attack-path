@@ -20,11 +20,18 @@
       <div class="rail-bottom"><span class="local-badge"><i aria-hidden="true"></i> Offline workspace</span><p>Files stay in your browser.</p><span class="version">AWS / REPORT v1</span></div>
     </aside>
     <div class="app-content">
-      <header class="topbar"><span>Workspace <span class="breadcrumb-separator">/</span> <strong>Path review</strong></span><span class="topbar-note">Local report viewer</span></header>
+      <header class="topbar"><span>Workspace <span class="breadcrumb-separator">/</span> <strong>Path review</strong></span><span class="topbar-note">Offline plan analysis</span></header>
       <main id="main" class="review-main">
         <section class="page-heading" aria-label="Review controls">
           <div><p class="eyebrow">INFRASTRUCTURE SECURITY</p><h1>Path review</h1><p class="page-description">Inspect infrastructure changes from the internet to your data.</p></div>
           <div class="toolbar"><button class="secondary-button" id="load-demo" type="button">Load demo</button><button class="primary-button" id="open-report" type="button" aria-describedby="file-help"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5"/></svg>Open report</button><input id="report-file" type="file" accept=".json,application/json" aria-describedby="file-help" hidden /></div>
+        </section>
+        <section class="plan-controls" aria-label="Compare Terraform plans">
+          <div><label for="base-plan">Base plan <span>(optional; defaults to empty)</span></label><input id="base-plan" type="file" accept=".json,application/json" /></div>
+          <div><label for="head-plan">Head plan</label><input id="head-plan" type="file" accept=".json,application/json" /></div>
+          <button class="primary-button" id="analyze-plans" type="button">Analyze plans</button>
+          <button class="secondary-button" id="cancel-analysis" type="button" hidden>Cancel</button>
+          <p>terraform show -json · 50 MiB per plan · analysis stays in this browser</p>
         </section>
         <p id="error" class="error" role="alert" hidden></p>
         <section class="report-bar" aria-label="Current report">
@@ -38,7 +45,7 @@
           <div class="metric unchanged"><div><span class="metric-label">Unchanged</span><span class="metric-marker" aria-hidden="true">—</span></div><strong id="unchanged-count">—</strong><span class="metric-note">Present in both reports</span></div>
           <div class="metric possible"><div><span class="metric-label">Possible</span><span class="metric-marker" aria-hidden="true">?</span></div><strong id="possible-count">—</strong><span class="metric-note">Introduced, with uncertainty</span></div>
         </section>
-        <p id="demo-notice" class="notice" hidden><strong>Demo report</strong><span>Synthetic findings for exploring the viewer. No Terraform analysis or min-cut calculation was performed.</span></p>
+        <p id="demo-notice" class="notice" hidden><strong>Demo report</strong><span>Example inputs for exploring the viewer. Do not use demonstration results as a security verdict.</span></p>
         <section class="workspace" aria-label="Attack-path explorer">
           <aside class="path-panel">
             <div class="panel-heading"><h2>Attack paths</h2><span id="path-count" class="count-chip">0</span></div>
@@ -51,12 +58,12 @@
           <div class="graph-panel">
             <div class="panel-heading"><div class="panel-title"><h2>Path diagram</h2><span id="selected-count">No selection</span></div><button id="fit" type="button" class="secondary-button" disabled>Fit to view</button></div>
             <div class="analysis-body">
-              <div class="graph-stage"><div class="graph-wrap"><div id="graph" role="img" aria-label="No path selected"></div><div id="graph-empty"><svg width="76" height="58" viewBox="0 0 76 58" fill="none" aria-hidden="true"><path d="M16 20v18h44V20" stroke="currentColor"/><path d="m56 30 4 8 4-8" stroke="currentColor"/><path d="M4 4h24v16H4zM48 38h24v16H48z" fill="var(--surface)" stroke="currentColor"/></svg><h3 id="empty-title">No path selected</h3><p id="empty-description">Open a report or load the demo to inspect a resource chain.</p><span class="empty-format">Accepts report JSON, not raw Terraform plans</span></div></div><div class="graph-legend"><span><i class="node-key" aria-hidden="true"></i> Resource chain</span><span>Scroll to zoom · drag to pan</span></div></div>
+              <div class="graph-stage"><div class="graph-wrap"><div id="graph" role="img" aria-label="No path selected"></div><div id="graph-empty"><svg width="76" height="58" viewBox="0 0 76 58" fill="none" aria-hidden="true"><path d="M16 20v18h44V20" stroke="currentColor"/><path d="m56 30 4 8 4-8" stroke="currentColor"/><path d="M4 4h24v16H4zM48 38h24v16H48z" fill="var(--surface)" stroke="currentColor"/></svg><h3 id="empty-title">No path selected</h3><p id="empty-description">Open a report or load the demo to inspect a resource chain.</p><span class="empty-format">Compare plans locally or open a report</span></div></div><div class="graph-legend"><span><i class="node-key" aria-hidden="true"></i> Resource chain</span><span>Scroll to zoom · drag to pan</span></div></div>
               <section class="evidence-panel" aria-label="Selected path evidence"><div class="evidence-heading"><h2>Evidence</h2><span>SELECTED PATH</span></div><div id="path-detail" class="path-detail" aria-live="polite"><p class="muted">The selected path's explanation, resources and suggested change appear here.</p></div></section>
             </div>
           </div>
         </section>
-        <section class="report-footer" aria-label="Report exports"><p>Export findings <span>Resource details are included in exported files.</span></p><div class="export-actions"><button id="export-md" class="secondary-button" disabled>Export Markdown</button><button id="export-sarif" class="secondary-button" disabled>Export SARIF <span aria-hidden="true">↓</span></button></div></section>
+        <section class="report-footer" aria-label="Report exports"><p>Export findings <span>Resource details are included in exported files.</span></p><div class="export-actions"><button id="export-json" class="secondary-button" disabled>Export JSON</button><button id="export-md" class="secondary-button" disabled>Export Markdown</button><button id="export-sarif" class="secondary-button" disabled>Export SARIF <span aria-hidden="true">↓</span></button></div></section>
         <details id="warnings"><summary>Analysis warnings &amp; scope</summary><ul id="warning-list"></ul><p>AWS only. Limited IAM semantics. Heuristic results include plan-time uncertainty. An empty report does not prove that infrastructure is secure.</p></details>
         <footer class="workspace-status"><p id="status" role="status" aria-live="polite">Ready. Open a report to begin.</p><span>IaC Attack Path / 0.1</span></footer>
       </main>

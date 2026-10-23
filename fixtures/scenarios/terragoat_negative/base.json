@@ -1,0 +1,69 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "normalized-static-slice",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_s3_bucket.data",
+          "mode": "managed",
+          "type": "aws_s3_bucket",
+          "name": "data",
+          "values": {
+            "bucket": "terragoat-data",
+            "arn": "arn:aws:s3:::terragoat-data"
+          }
+        },
+        {
+          "address": "aws_s3_bucket.financials",
+          "mode": "managed",
+          "type": "aws_s3_bucket",
+          "name": "financials",
+          "values": {
+            "bucket": "terragoat-financials",
+            "acl": "private"
+          }
+        },
+        {
+          "address": "aws_security_group.web-node",
+          "mode": "managed",
+          "type": "aws_security_group",
+          "name": "web-node",
+          "values": {
+            "id": "sg-web",
+            "ingress": [
+              {
+                "protocol": "tcp",
+                "from_port": 80,
+                "to_port": 80,
+                "cidr_blocks": [
+                  "10.0.0.0/8"
+                ]
+              },
+              {
+                "protocol": "tcp",
+                "from_port": 22,
+                "to_port": 22,
+                "cidr_blocks": [
+                  "10.0.0.0/8"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "address": "aws_instance.web_host",
+          "mode": "managed",
+          "type": "aws_instance",
+          "name": "web_host",
+          "values": {
+            "associate_public_ip_address": true,
+            "vpc_security_group_ids": [
+              "sg-web"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

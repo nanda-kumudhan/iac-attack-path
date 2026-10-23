@@ -1,45 +1,45 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Build stages, project ownership, report interface and limits of IaC Attack Path." />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
-    <title>Project guide · IaC Attack Path</title>
-    <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="/src/viewer/style.css" />
-  </head>
-  <body>
-    <header class="site-header"><a class="brand" href="./">IaC Attack Path</a><nav><a href="./">Back to path review</a></nav></header>
-    <main class="guide">
-      <p class="eyebrow">PROJECT GUIDE / v0.1</p>
-      <h1>Project guide</h1>
-      <p>The goal is an offline checker that compares base and head Terraform plans and flags new routes from the internet to data. This checkout provides delivery and presentation. The analysis engine is still to be hand-written.</p>
-      <h2>Where the project stands</h2>
-      <table><thead><tr><th>Component</th><th>Status</th></tr></thead><tbody><tr><td>Report formatting, SARIF and Action gate</td><td>Implemented for precomputed reports</td></tr><tr><td>Local graph viewer</td><td>Implemented for precomputed reports</td></tr><tr><td>Terraform parser, graph, BFS, diff, IAM, min-cut</td><td>To be hand-written</td></tr><tr><td>Three labelled scenarios and evaluation</td><td>To be hand-written and measured</td></tr></tbody></table>
-      <h2>Run locally</h2>
-      <pre><code>npm ci
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Offline Terraform attack-path analysis: usage, model and evaluation." />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <title>Project guide · IaC Attack Path</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="/src/viewer/style.css" />
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="./">IaC Attack Path</a><nav><a href="./">Back to path review</a></nav></header>
+  <main class="guide">
+    <p class="eyebrow">PROJECT GUIDE / v0.1</p>
+    <h1>Offline infrastructure review</h1>
+    <p>Compare base and head Terraform plans to find newly introduced routes from the internet to AWS data. The parser, typed graph, path search, IAM subset, canonical diff and minimum-edit solver run in the CLI, GitHub Action and this browser.</p>
+    <h2>Analyze in the browser</h2>
+    <ol><li>Export both plans using <code>terraform show -json</code>.</li><li>Choose a base and head file in Path review. Base is optional and defaults to empty infrastructure.</li><li>Select <strong>Analyze plans</strong>. A cancellable worker performs analysis locally.</li><li>Inspect the chain, evidence, assumptions and complete minimum edit set. Export JSON, Markdown or SARIF as needed.</li></ol>
+    <p>Each plan is limited to 50 MiB. You can also open a precomputed v1 report up to 5 MiB. Load demo analyzes a normalized CloudGoat SSRF slice and clearly marks it as an example.</p>
+    <h2>Use the CLI</h2>
+    <pre><code>npm ci
+npm run analyze -- --base base.json --head head.json
 npm run dev
-
-# Format the synthetic example locally
-npm run report -- --input examples/reports/demo.json
-
-# Type-check, test delivery code and build
-npm run check</code></pre>
-      <h2>A report is the boundary</h2>
-      <p>Your engine emits a version 1 report with an analysis status, warnings and paths. Each path includes a canonical ID, change classification, certainty, an explanation and ordered resource steps. Source locations and remediation suggestions are optional.</p>
-      <p>The viewer displays those supplied steps. It does not parse Terraform, calculate reachability, find paths, perform a diff or compute a minimum cut. Raw Terraform plans cannot be opened yet. Browser analysis can be wired in once you write the browser-compatible engine.</p>
-      <h2>Use the Action</h2>
-      <p>First generate a report with your engine. The Action reads it via <code>report-file</code>, writes Markdown and SARIF, and fails for introduced paths, including possible paths. It rejects demo reports unless explicitly allowed for a presentation test.</p>
-      <p>The default is local report files and count-only logs. PR comments require an explicit opt-in and a token with write permission. Publishing comments, uploading SARIF or sharing reports sends resource details to GitHub. The workflow example is in <code>docs/action.md</code> in the repository.</p>
-      <h2>The next hand-written stages</h2>
-      <ol><li>Select three scenarios, pin their revisions and label the expected chains and negative controls yourself.</li><li>Spike credential-free Terraform plan generation. Record what is actually achievable before relying on it in CI.</li><li>Build the typed graph, parser and networking edges. Public ingress alone is insufficient: check routes, public addressing and service assumptions.</li><li>Write BFS and path explanations, the limited IAM rules, canonical identity and before/after diff.</li><li>Emit the report format, then connect the Action. Implement min-cut and explain the units of a change before describing a suggestion as smallest.</li><li>Measure found, missed and false paths and runtime on 500 and 5,000 resources. Publish the failures alongside the successes.</li></ol>
-      <h2>Scope and honest limits</h2>
-      <p>AWS only, a small IAM subset, heuristic chains and values that may remain unknown until apply. A reachable instance does not imply compromise or access to its credentials. Record those attack prerequisites in the engine's explanations. No claim of complete IAM evaluation or a guarantee of safety.</p>
-      <p>CloudGoat and TerraGoat are to be analysed statically only. This project includes no deployment workflow, no real lab plans and no evaluation scores. The synthetic demo is an interface example, not ground truth.</p>
-      <h2>Local by construction</h2>
-      <p>The production viewer bundles its scripts and Cytoscape locally, uses no CDN, analytics or backend, and blocks network connections with a content security policy. Selected reports stay in memory until cleared or the tab closes. The static site assets must still be served or downloaded once.</p>
-    </main>
-    <footer class="site-footer"><span>IaC Attack Path / Project guide</span><a href="./">Back to report viewer</a></footer>
-  </body>
+npm run check
+npm run evaluate
+npm run benchmark</code></pre>
+    <p>The CLI exits 0 for no introduced paths, 1 for introduced paths including possible ones, and 2 for invalid or incomplete analysis. It writes JSON, Markdown, SARIF and the head graph. The Action accepts <code>base-plan</code> and <code>head-plan</code> directly and writes reports before failing the gate.</p>
+    <h2>What a finding means</h2>
+    <p>The main chain is Internet → SecurityGroup → Instance → Role → Bucket. Public ingress is combined with public-address and routing evidence. Credential use explicitly assumes an application exploit, SSRF or another compromise. Any uncertain edge makes the chain possible. A possible path is still reviewable and fails the gate by default.</p>
+    <p>IAM support includes role policies, object-read grants, a limited deny/boundary evaluator, role assumption and four escalation rules: self PutRolePolicy, self AttachRolePolicy, CreatePolicyVersion on an attached customer policy, and UpdateAssumeRolePolicy with AssumeRole. This is a subset of AWS behavior.</p>
+    <h2>Minimum blocking changes</h2>
+    <p>Each supported rule, IAM statement or profile edit costs one. Max-flow/min-cut seeds an exact shared-edit search that returns the smallest edit set intersecting all introduced paths. A cut with cost greater than one needs every listed edit. Minimality applies to this finite supported model, not business disruption or every possible AWS remediation. No HCL is rewritten automatically.</p>
+    <h2>Measured evaluation</h2>
+    <table><thead><tr><th>Normalized static slice</th><th>Found</th><th>Missed</th><th>False chains</th></tr></thead><tbody><tr><td>CloudGoat ec2_ssrf</td><td>1</td><td>0</td><td>0</td></tr><tr><td>CloudGoat cloud_breach_s3</td><td>1</td><td>0</td><td>0</td></tr><tr><td>CloudGoat rce_web_app</td><td>0</td><td>1</td><td>0</td></tr><tr><td>TerraGoat negative control</td><td>0</td><td>0</td><td>0</td></tr></tbody></table>
+    <p>The missed chain needs ALB forwarding and CIDR-based private database reachability, which are unsupported. Labels were prepared from pinned source but have not been independently human-reviewed. These adapted slices do not establish full-lab accuracy. Source revisions, normalization, machine-readable results and sparse 500/5,000-resource benchmarks are in the repository.</p>
+    <h2>Privacy and limits</h2>
+    <p>Scripts, styles and Cytoscape are bundled locally. There is no backend, CDN or analytics, and the production content security policy blocks network connections. Selected files stay in browser memory. Clearing/cancelling terminates active analysis. The initial site assets must still be downloaded or served once.</p>
+    <p>AWS only. Full IAM, SCPs/RCPs, KMS, NACLs, load balancers, arbitrary public CIDRs, Kubernetes and Azure are outside this release. Missing links may cause misses; external controls may cause false positives. An empty report does not prove security. Search limits produce an error, not a clean verdict.</p>
+    <p>CloudGoat and TerraGoat were inspected statically. Nothing was deployed. The separate Terraform example uses placeholder credentials and was only planned. No AI or ML is used.</p>
+    <p><a href="https://github.com/nanda-kumudhan/iac-attack-path">Source, installation and evaluation documentation</a></p>
+  </main>
+  <footer class="site-footer"><span>IaC Attack Path / Project guide</span><a href="./">Back to path review</a></footer>
+</body>
 </html>

@@ -1,0 +1,6 @@
+{
+  "expectedChains": [],
+  "rationale": "Source comment calls data bucket public, but this revision has no public ACL/policy. EC2 has no profile. Do not invent an internet-to-S3 chain from comments.",
+  "comparison": "Unique ordered resource sequences; port/action variants collapse. Base is a restricted-ingress counterfactual.",
+  "independentReview": false
+}

@@ -1,4 +1,4 @@
-name: Delivery checks
+name: Engine and delivery checks
 on:
   pull_request:
   push:
@@ -18,12 +18,27 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - run: npm run evaluate
       - name: Ensure the shipped Action matches its source
         run: git diff --exit-code -- lib/action.cjs
-      - name: Smoke-test report delivery (synthetic only)
+      - name: Smoke-test raw Terraform plan analysis
         uses: ./
         with:
-          report-file: examples/reports/demo.json
+          base-plan: fixtures/terraform-generated/base.json
+          head-plan: fixtures/terraform-generated/head.json
           output-directory: iac-report
-          allow-demo: 'true'
           fail-on-introduced: 'false'
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser

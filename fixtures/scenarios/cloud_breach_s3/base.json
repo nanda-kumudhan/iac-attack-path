@@ -1,0 +1,132 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "normalized-static-slice",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_vpc.main",
+          "mode": "managed",
+          "type": "aws_vpc",
+          "name": "main",
+          "values": {
+            "id": "vpc-main"
+          }
+        },
+        {
+          "address": "aws_subnet.public",
+          "mode": "managed",
+          "type": "aws_subnet",
+          "name": "public",
+          "values": {
+            "id": "subnet-public",
+            "vpc_id": "vpc-main"
+          }
+        },
+        {
+          "address": "aws_internet_gateway.main",
+          "mode": "managed",
+          "type": "aws_internet_gateway",
+          "name": "main",
+          "values": {
+            "id": "igw-main",
+            "vpc_id": "vpc-main"
+          }
+        },
+        {
+          "address": "aws_route_table.public",
+          "mode": "managed",
+          "type": "aws_route_table",
+          "name": "public",
+          "values": {
+            "id": "rt-public",
+            "route": [
+              {
+                "cidr_block": "0.0.0.0/0",
+                "gateway_id": "igw-main"
+              }
+            ]
+          }
+        },
+        {
+          "address": "aws_route_table_association.public",
+          "mode": "managed",
+          "type": "aws_route_table_association",
+          "name": "public",
+          "values": {
+            "subnet_id": "subnet-public",
+            "route_table_id": "rt-public"
+          }
+        },
+        {
+          "address": "aws_security_group.cg-ec2-http-security-group",
+          "mode": "managed",
+          "type": "aws_security_group",
+          "name": "cg-ec2-http-security-group",
+          "values": {
+            "id": "sg-http",
+            "vpc_id": "vpc-main",
+            "ingress": [
+              {
+                "protocol": "tcp",
+                "from_port": 80,
+                "to_port": 80,
+                "cidr_blocks": [
+                  "10.0.0.0/8"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "address": "aws_instance.ec2-vulnerable-proxy-server",
+          "mode": "managed",
+          "type": "aws_instance",
+          "name": "ec2-vulnerable-proxy-server",
+          "values": {
+            "id": "i-example",
+            "subnet_id": "subnet-public",
+            "associate_public_ip_address": true,
+            "vpc_security_group_ids": [
+              "sg-http"
+            ],
+            "iam_instance_profile": "cg-ec2-instance-profile"
+          }
+        },
+        {
+          "address": "aws_iam_instance_profile.cg-ec2-instance-profile",
+          "mode": "managed",
+          "type": "aws_iam_instance_profile",
+          "name": "cg-ec2-instance-profile",
+          "values": {
+            "name": "cg-ec2-instance-profile",
+            "role": "cg-banking-WAF-Role"
+          }
+        },
+        {
+          "address": "aws_iam_role.cg-banking-WAF-Role",
+          "mode": "managed",
+          "type": "aws_iam_role",
+          "name": "cg-banking-WAF-Role",
+          "values": {
+            "name": "cg-banking-WAF-Role",
+            "arn": "arn:aws:iam::111111111111:role/cg-banking-WAF-Role",
+            "managed_policy_arns": [
+              "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+            ]
+          }
+        },
+        {
+          "address": "aws_s3_bucket.cg-cardholder-data-bucket",
+          "mode": "managed",
+          "type": "aws_s3_bucket",
+          "name": "cg-cardholder-data-bucket",
+          "values": {
+            "bucket": "cg-example-data",
+            "arn": "arn:aws:s3:::cg-example-data"
+          }
+        }
+      ]
+    }
+  }
+}

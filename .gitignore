@@ -37,3 +37,9 @@ crash.*.log
 # Generated reports may reveal infrastructure details
 iac-report/
 *.sarif
+
+# Generated offline example output (checked-in fixtures live separately)
+examples/offline/base.json
+examples/offline/head.json
+playwright-report/
+test-results/

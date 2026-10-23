@@ -1,30 +1,38 @@
-name: IaC Attack Path Report
-description: Format a precomputed attack-path report and gate introduced paths. Analysis engine required separately.
+name: IaC Attack Path Checker
+description: Compare Terraform plans offline, find introduced internet-to-data paths and compute minimum blocking edits.
 branding:
   icon: shield
   color: blue
 inputs:
+  base-plan:
+    description: Base terraform show -json plan; required together with head-plan
+    required: false
+  head-plan:
+    description: Head terraform show -json plan
+    required: false
   report-file:
-    description: Path to a v1 JSON report emitted by your hand-written engine
-    required: true
+    description: Alternatively consume a precomputed v1 report; cannot be combined with plans
+    required: false
   output-directory:
-    description: Directory for report.md and report.sarif
+    description: Directory for JSON, Markdown and SARIF reports
     default: iac-report
   fail-on-introduced:
     description: Fail for introduced paths, including possible paths
     default: 'true'
   allow-demo:
-    description: Accept synthetic demonstration reports; never enable for a security gate
+    description: Accept synthetic reports for presentation tests only
     default: 'false'
   post-comment:
-    description: Publish report details to the current PR (explicit opt-in)
+    description: Publish findings to the current PR (explicit opt-in)
     default: 'false'
   github-token:
-    description: Token with pull-requests write permission; only used for opted-in comments
+    description: Token with pull-requests write permission; used only for opted-in comments
     required: false
 outputs:
   introduced-count:
-    description: Number of paths labelled introduced by the engine
+    description: Number of introduced paths
+  report-file:
+    description: Absolute path to the generated JSON report
   markdown-file:
     description: Absolute path to the generated Markdown report
   sarif-file:
